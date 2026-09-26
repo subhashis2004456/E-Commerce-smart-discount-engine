@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Discount Studio: AI-Driven POS & Inventory Control System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        darkbg: '#0f172a',
+                        darkcard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Lucide-like Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .dark .glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* --- COLLAPSE ANIMATION STYLES --- */
+        .site-wrapper {
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 100vw;
+        }
+
+        .site-wrapper.collapsed {
+            width: calc(100vw - 380px); /* Collapses screen width to the left */
+        }
+
+        .ai-sidebar {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 380px;
+            height: 100vh;
+            transition: right 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 50;
+        }
+
+        .ai-sidebar.open {
+            right: 0;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex transition-colors duration-200 overflow-x-hidden">
+
+    <!-- MAIN WEBSITE CONTAINER (Collapses to Left) -->
+    <div id="siteWrapper" class="site-wrapper min-h-full flex flex-col shrink-0">
+        
+        <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 px-4 py-3">
+            <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid me-0 fa-layer-group text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+                           Smart Discount Studio: AI-Driven POS & Inventory Control System
+                        </h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Enterprise Discount & RBAC Studio</p>
+                    </div>
+                </div>
+
+                <!-- Header Action Controls & Current User Info -->
+                <div class="flex items-center gap-3 ml-auto">
+                    <!-- FLOATING / HEADER AI ASSISTANT BUTTON -->
+                    <button id="aiToggleBtn" onclick="toggleAiPanel()" class="flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 transition shadow-md shadow-indigo-500/20">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Assistant
+                    </button>
+
+                    <!-- User Profile Badge -->
+                    <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-slate-600/50">
+                        <div id="headerUserAvatar" class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+                            AD
+                        </div>
+                        <div class="text-xs">
+                            <div class="font-semibold flex items-center gap-1.5" id="headerUsername">
+                                admin
+                                <span id="headerRoleBadge" class="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] px-1.5 py-0.5 rounded uppercase font-bold">ADMIN</span>
+                            </div>
+                            <div id="headerAccessBadge" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Authorized Access
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle Button -->
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition" title="Toggle Theme">
+                        <i class="fa-solid fa-moon dark:hidden"></i>
+                        <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                    </button>
+
+                    <!-- Switch User / Auth Trigger -->
+                    <button onclick="openLoginModal()" class="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Switch Account
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto p-4 gap-4">
+            <!-- Sidebar Navigation -->
+            <aside class="w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col p-3 shadow-sm shrink-0 hidden md:flex">
+                <nav class="space-y-1.5 flex-1">
+                    <button onclick="switchTab('pos')" id="tab-btn-pos" class="nav-tab-btn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        <i class="fa-solid fa-cash-register w-5 text-center text-indigo-500"></i> POS Terminal
+                    </button>
+                    <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        <i class="fa-solid fa-boxes-stacked w-5 text-center text-amber-500"></i> Inventory (100 Items)
+                    </button>
+
+                    <!-- Granularly Permission-Controlled Tabs -->
+                    <button onclick="switchTab('promos')" id="tab-btn-promos" class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        <i class="fa-solid fa-tags w-5 text-center text-emerald-500"></i> Smart Promotions
+                    </button>
+                    <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        <i class="fa-solid fa-chart-pie w-5 text-center text-sky-500"></i> Analytics & Reports
+                    </button>
+
+                    <!-- ADMIN ONLY RBAC TAB -->
+                    <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
+                        <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase px-3">Admin Governance</span>
+                        <button onclick="switchTab('rbac')" id="tab-btn-rbac" class="nav-tab-btn mt-1.5 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-user-shield w-5 text-center text-rose-500"></i> User Access (RBAC)
+                            </span>
+                            <span id="pendingUserBadge" class="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full hidden">0</span>
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- Quick Status Summary Widget in Sidebar -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs space-y-1">
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>System Database:</span> <span class="font-semibold text-emerald-600">Active</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>Total Products:</span> <span class="font-semibold text-slate-700 dark:text-slate-200" id="sbTotalProducts">100</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 flex flex-col min-w-0 overflow-y-auto pr-1 relative">
+
+                <!-- ACCESS DENIED / REVOKED BANNER OVERLAY -->
+                <div id="accessDeniedBanner" class="hidden absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-rose-200 dark:border-rose-900/50">
+                    <div class="w-20 h-20 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center text-3xl mb-4 shadow-xl">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Access Denied / Authorization Pending</h2>
+                    <p class="text-slate-600 dark:text-slate-400 max-w-md mb-6 text-sm">
+                        Your account (<span id="deniedUsername" class="font-bold text-indigo-600 dark:text-indigo-400">user</span>) does not have global site access permission granted by the Super Administrator yet, or your access was explicitly revoked.
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="openLoginModal()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition shadow-lg shadow-indigo-600/30">
+                            Login as Admin / Other User
+                        </button>
+                        <button onclick="requestAccessNotification()" class="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium text-sm transition">
+                            Notify Admin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MOBILE TAB BAR -->
+                <div class="flex md:hidden overflow-x-auto gap-2 pb-3 mb-2 shrink-0 border-b border-slate-200 dark:border-slate-700">
+                    <button onclick="switchTab('pos')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-indigo-600 text-white">POS Terminal</button>
+                    <button onclick="switchTab('inventory')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Inventory</button>
+                    <button onclick="switchTab('promos')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Promotions</button>
+                    <button onclick="switchTab('analytics')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Analytics</button>
+                    <button onclick="switchTab('rbac')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-rose-600 text-white">RBAC Admin</button>
+                </div>
+
+                <!-- TAB 1: POS TERMINAL -->
+                <section id="tab-pos" class="tab-content flex-1 flex flex-col lg:flex-row gap-4 h-full">
+                    <!-- Products Grid Column -->
+                    <div class="flex-1 flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm overflow-hidden">
+                        <!-- POS Header: Category Pills & Search -->
+                        <div class="space-y-3 mb-4 shrink-0">
+                            <div class="flex items-center gap-3">
+                                <div class="relative flex-1">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="posSearch" oninput="renderPosGrid()" placeholder="Search by name, SKU or brand..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <select id="posCategoryFilter" onchange="renderPosGrid()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="ALL">All Categories (10)</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Computers & Accessories">Computers & Accessories</option>
+                                    <option value="Mobile & Tablets">Mobile & Tablets</option>
+                                    <option value="Smart Home & Automation">Smart Home & Automation</option>
+                                    <option value="Office Supplies & Furniture">Office Supplies & Furniture</option>
+                                    <option value="Audio & Wearables">Audio & Wearables</option>
+                                    <option value="Gaming & Entertainment">Gaming & Entertainment</option>
+                                    <option value="Networking & Security">Networking & Security</option>
+                                    <option value="Kitchen Appliances">Kitchen Appliances</option>
+                                    <option value="Tools & Hardware">Tools & Hardware</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Products Grid Display -->
+                        <div id="posGrid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 pr-1">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right Cart & Dynamic Calculation Column -->
+                    <div class="w-full lg:w-96 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col shrink-0">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+                            <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-cart-shopping text-indigo-500"></i> Checkout Cart
+                            </h2>
+                            <button onclick="clearCart()" class="text-xs text-rose-500 hover:text-rose-600 font-medium flex items-center gap-1">
+                                <i class="fa-regular fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- SMART AI UPSELL SUGGESTION BANNER -->
+                        <div id="smartUpsellBanner" class="my-3 p-3 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 text-sm mt-0.5"></i>
+                            <div class="text-xs">
+                                <span class="font-bold text-slate-800 dark:text-slate-200" id="upsellTitle">Smart Promo Suggestion</span>
+                                <p class="text-slate-600 dark:text-slate-400 mt-0.5" id="upsellDesc">Add ₹500 more to unlock 15% OFF coupon!</p>
+                            </div>
+                        </div>
+
+                        <!-- Cart Item List -->
+                        <div id="cartItemsList" class="flex-1 overflow-y-auto space-y-2 py-2 pr-1 min-h-[160px]">
+                            <!-- Rendered via JS -->
+                        </div>
+
+                        <!-- Loyalty Tier & Coupon Application Controls -->
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                            <!-- Loyalty Tier Selector -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Customer Tier:</label>
+                                <select id="cartLoyaltyTier" onchange="recalculateCart()" class="text-xs bg-slate-100 dark:bg-slate-700 border-none rounded-lg px-2.5 py-1 font-bold text-indigo-600 dark:text-indigo-400 focus:ring-1 focus:ring-indigo-500">
+                                    <option value="REGULAR">Regular (0%)</option>
+                                    <option value="SILVER">Silver Tier (5% OFF)</option>
+                                    <option value="GOLD">Gold Tier (10% OFF)</option>
+                                    <option value="PLATINUM">Platinum Tier (15% OFF)</option>
+                                </select>
+                            </div>
+
+                            <!-- Coupon Code Input -->
+                            <div class="flex gap-2">
+                                <input type="text" id="couponInput" placeholder="Promo Code (e.g. SAVE10)" class="uppercase flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <button onclick="applyCoupon()" class="px-3 py-1.5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition">
+                                    Apply
+                                </button>
+                            </div>
+                            <div id="appliedCouponBadge" class="hidden text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded flex justify-between items-center">
+                                <span>Promo Code Applied: <b id="appliedCodeText"></b></span>
+                                <button onclick="removeCoupon()" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+
+                            <!-- Real-time Cart Financial Ledger -->
+                            <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl space-y-1.5 text-xs">
+                                <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                                    <span>Subtotal:</span>
+                                    <span id="ledgerSubtotal" class="font-medium text-slate-700 dark:text-slate-300">₹0.00</span>
+                                </div>
+                                <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                                    <span>Loyalty Discount:</span>
+                                    <span id="ledgerLoyalty" class="font-medium text-emerald-600 dark:text-emerald-400">-₹0.00</span>
+                                </div>
+                                <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                                    <span>Promo Coupon:</span>
+                                    <span id="ledgerPromo" class="font-medium text-emerald-600 dark:text-emerald-400">-₹0.00</span>
+                                </div>
+                                <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                                    <span>GST (18%):</span>
+                                    <span id="ledgerTax" class="font-medium text-slate-700 dark:text-slate-300">₹0.00</span>
+                                </div>
+                                <div class="border-t border-slate-200 dark:border-slate-700 pt-1.5 flex justify-between font-extrabold text-sm text-slate-800 dark:text-slate-100">
+                                    <span>Grand Total:</span>
+                                    <span id="ledgerGrandTotal" class="text-indigo-600 dark:text-indigo-400">₹0.00</span>
+                                </div>
+                            </div>
+
+                            <!-- Complete Order Action -->
+                            <button id="checkoutBtn" onclick="processCheckout()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/25 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-receipt"></i> Complete Sale & Receipt
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: INVENTORY MANAGEMENT (100 ITEMS) -->
+                <section id="tab-inventory" class="tab-content hidden flex-1 flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm overflow-hidden">
+                    <!-- Inventory Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100">Catalog Inventory Management</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Manage stock levels, SKUs, and pricing across 100 categorized fixed products.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="addNewProductBtn" onclick="openAddProductModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Add Product
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters & Search -->
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <input type="text" id="invSearch" oninput="renderInventoryTable()" placeholder="Search product name or SKU..." class="flex-1 min-w-[200px] px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                        <select id="invCatFilter" onchange="renderInventoryTable()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                            <option value="ALL">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Computers & Accessories">Computers & Accessories</option>
+                            <option value="Mobile & Tablets">Mobile & Tablets</option>
+                            <option value="Smart Home & Automation">Smart Home & Automation</option>
+                            <option value="Office Supplies & Furniture">Office Supplies & Furniture</option>
+                            <option value="Audio & Wearables">Audio & Wearables</option>
+                            <option value="Gaming & Entertainment">Gaming & Entertainment</option>
+                            <option value="Networking & Security">Networking & Security</option>
+                            <option value="Kitchen Appliances">Kitchen Appliances</option>
+                            <option value="Tools & Hardware">Tools & Hardware</option>
+                        </select>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="flex-1 overflow-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-900/80 sticky top-0 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-semibold uppercase">
+                                <tr>
+                                    <th class="p-3">SKU / Item</th>
+                                    <th class="p-3">Category</th>
+                                    <th class="p-3">Price (₹)</th>
+                                    <th class="p-3">Stock Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                                <!-- JS Generated Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB 3: SMART PROMOTIONS & DISCOUNT RULES ENGINE -->
+                <section id="tab-promos" class="tab-content hidden flex-1 flex-col space-y-4">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100">Smart Promotion & Discount Rule Engine</h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Configure percentage/flat promo codes with cart subtotal thresholds.</p>
+                            </div>
+                            <button id="addPromoBtn" onclick="openPromoModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Create New Rule
+                            </button>
+                        </div>
+
+                        <!-- Promo Rules Grid -->
+                        <div id="promoRulesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- JS Dynamic promo cards -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: ANALYTICS & SALES REPORTING -->
+                <section id="tab-analytics" class="tab-content hidden flex-1 flex-col space-y-4">
+                    <!-- Summary KPI Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+                            <span class="text-xs text-slate-500 font-medium">Total Gross Sales</span>
+                            <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1" id="kpiRevenue">₹0.00</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+                            <span class="text-xs text-slate-500 font-medium">Total Orders Processed</span>
+                            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="kpiOrders">0</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+                            <span class="text-xs text-slate-500 font-medium">Total Discounts Conceded</span>
+                            <div class="text-2xl font-black text-amber-500 mt-1" id="kpiDiscounts">₹0.00</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+                            <span class="text-xs text-slate-500 font-medium">Average Order Value (AOV)</span>
+                            <div class="text-2xl font-black text-sky-500 mt-1" id="kpiAOV">₹0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Log Table & CSV Export -->
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex-1 flex flex-col">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Completed Order Logs</h3>
+                            <button onclick="exportSalesCSV()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-xs font-semibold rounded-lg transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-csv text-emerald-600"></i> Export CSV
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-700 text-slate-500">
+                                    <tr>
+                                        <th class="p-2.5">Order ID</th>
+                                        <th class="p-2.5">Date & Time</th>
+                                        <th class="p-2.5">Cashier</th>
+                                        <th class="p-2.5">Items</th>
+                                        <th class="p-2.5">Grand Total</th>
+                                        <th class="p-2.5 text-right">Receipt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesLogTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                    <!-- JS Output -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: ADMIN ROLE-BASED ACCESS CONTROL (RBAC) GOVERNANCE -->
+                <section id="tab-rbac" class="tab-content hidden flex-1 flex-col space-y-4">
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100">User Permission Management Panel</h2>
+                                    <span class="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">Super Admin Panel</span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Grant or revoke global site access permissions and toggle granular feature capabilities for each user account.</p>
+                            </div>
+                            <button onclick="openRegisterUserModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-plus"></i> Register New User Account
+                            </button>
+                        </div>
+
+                        <!-- RBAC User Cards / Table -->
+                        <div id="rbacUsersContainer" class="space-y-3">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- AI ASSISTANT SLIDING PANEL -->
+    <aside id="aiSidebar" class="ai-sidebar bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
+        <!-- AI Header -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">OmniEngine Copilot</h3>
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Online & Ready</p>
+                </div>
+            </div>
+            <button onclick="toggleAiPanel()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- AI Chat Messages Area -->
+        <div id="aiChatContainer" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+            <div class="bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-2xl text-slate-700 dark:text-slate-300 space-y-1">
+                <p class="font-semibold text-indigo-600 dark:text-indigo-400">Hello! I'm your POS Assistant.</p>
+                <p>I can help you review sales, suggest top-performing discounts, or query product inventory details.</p>
+            </div>
+        </div>
+
+        <!-- AI Input Box -->
+        <div class="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex gap-2">
+            <input type="text" id="aiInput" placeholder="Ask AI anything..." onkeydown="if(event.key==='Enter') sendAiMessage()" class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <button onclick="sendAiMessage()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MODAL 1: AUTH / LOGIN / ROLE SWITCHER -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative space-y-4">
+            <button onclick="closeLoginModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div class="text-center">
+                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-xl mx-auto mb-2">
+                    <i class="fa-solid fa-user-lock"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Account Login & Role Switcher</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Default Admin Key: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-indigo-500 font-mono">admin124</code></p>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Username</label>
+                    <input type="text" id="loginUsername" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password / Security Key</label>
+                    <input type="password" id="loginPassword" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-indigo-600/30 transition">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-3 text-center">
+                <p class="text-[11px] text-slate-500">Need a new test user account?</p>
+                <button onclick="closeLoginModal(); openRegisterUserModal();" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
+                    Register New Account Here
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: REGISTER NEW USER -->
+    <div id="registerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative space-y-4">
+            <button onclick="closeRegisterModal()" class="absolute right-4 top-4 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Register New Account</h3>
+            <form onsubmit="handleRegisterSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-semibold block mb-1">New Username</label>
+                    <input type="text" id="regUsername" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1">Password</label>
+                    <input type="password" id="regPassword" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1">Select Role</label>
+                    <select id="regRole" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <option value="USER">Standard User</option>
+                        <option value="ADMIN">Administrator</option>
+                    </select>
+                </div>
+                <p class="text-[10px] text-amber-600 dark:text-amber-400">Note: New non-admin users require Admin approval before accessing the platform.</p>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-xl">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PRINT RECEIPT MODAL -->
+    <div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 relative">
+            <button onclick="closeReceiptModal()" class="absolute right-4 top-4 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            
+            <div id="receiptPrintArea" class="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-200 space-y-2 border border-slate-200 dark:border-slate-700">
+                <div class="text-center border-b border-dashed border-slate-300 dark:border-slate-700 pb-2">
+                    <h2 class="font-bold text-sm">AI-Driven POS & Inventory Control System</h2>
+                    <p class="text-[10px] text-slate-500">Official Store Receipt</p>
+                    <p class="text-[10px] mt-1 text-slate-400" id="receiptTimestamp"></p>
+                </div>
+                <div class="flex justify-between text-[10px]">
+                    <span>Order #: <b id="receiptOrderId"></b></span>
+                    <span>Cashier: <b id="receiptCashier"></b></span>
+                </div>
+                <div class="border-b border-dashed border-slate-300 dark:border-slate-700 pb-2 space-y-1" id="receiptItemList">
+                    <!-- Items inserted by JS -->
+                </div>
+                <div class="space-y-1 text-right text-[11px]">
+                    <div class="flex justify-between"><span>Subtotal:</span><span id="receiptSubtotal"></span></div>
+                    <div class="flex justify-between text-emerald-600"><span>Discounts:</span><span id="receiptDiscounts"></span></div>
+                    <div class="flex justify-between"><span>GST (18%):</span><span id="receiptTax"></span></div>
+                    <div class="flex justify-between font-bold text-sm border-t border-slate-300 dark:border-slate-700 pt-1"><span>TOTAL PAID:</span><span id="receiptTotal"></span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="window.print()" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-xs shadow"><i class="fa-solid fa-print"></i> Print Receipt</button>
+                <button onclick="closeReceiptModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-xl font-semibold text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ADD/EDIT INVENTORY ITEM -->
+    <div id="productModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-3 relative">
+            <button onclick="closeProductModal()" class="absolute right-4 top-4 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-base" id="productModalTitle">Add Product</h3>
+            <form onsubmit="handleProductSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="prodEditId">
+                <div>
+                    <label class="font-semibold block mb-1">Product Name</label>
+                    <input type="text" id="prodName" required class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-semibold block mb-1">SKU Code</label>
+                        <input type="text" id="prodSKU" required class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-1">Category</label>
+                        <select id="prodCategory" class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <option value="Electronics">Electronics</option>
+                            <option value="Computers & Accessories">Computers & Accessories</option>
+                            <option value="Mobile & Tablets">Mobile & Tablets</option>
+                            <option value="Smart Home & Automation">Smart Home & Automation</option>
+                            <option value="Office Supplies & Furniture">Office Supplies & Furniture</option>
+                            <option value="Audio & Wearables">Audio & Wearables</option>
+                            <option value="Gaming & Entertainment">Gaming & Entertainment</option>
+                            <option value="Networking & Security">Networking & Security</option>
+                            <option value="Kitchen Appliances">Kitchen Appliances</option>
+                            <option value="Tools & Hardware">Tools & Hardware</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-semibold block mb-1">Price (₹ INR)</label>
+                        <input type="number" step="0.01" id="prodPrice" required class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-1">Stock Units</label>
+                        <input type="number" id="prodStock" required class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1">Unsplash Image URL</label>
+                    <input type="url" id="prodImg" required class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg" placeholder="https://images.unsplash.com/...">
+                </div>
+                <button type="submit" class="w-full py-2 bg-indigo-600 text-white font-semibold rounded-xl mt-2">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* TOGGLE AI COLLAPSE ANIMATION LOGIC */
+        function toggleAiPanel() {
+            const siteWrapper = document.getElementById('siteWrapper');
+            const aiSidebar = document.getElementById('aiSidebar');
+            
+            siteWrapper.classList.toggle('collapsed');
+            aiSidebar.classList.toggle('open');
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            if(!message) return;
+
+            const container = document.getElementById('aiChatContainer');
+            
+            // Add user message
+            container.innerHTML += `
+                <div class="bg-slate-100 dark:bg-slate-700 p-2.5 rounded-2xl text-right ml-6 font-medium">
+                    ${message}
+                </div>
+            `;
+            
+            input.value = '';
+
+            // Simple automated AI reply simulation
+            setTimeout(() => {
+                container.innerHTML += `
+                    <div class="bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-2xl mr-6 space-y-1">
+                        <p class="font-semibold text-indigo-600 dark:text-indigo-400">OmniEngine AI:</p>
+                        <p>I have processed your query: "<b>${message}</b>". All inventory stock and discount metrics are currently optimal.</p>
+                    </div>
+                `;
+                container.scrollTop = container.scrollHeight;
+            }, 500);
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        /* GLOBAL STATE DATA STRUCTURES */
+        let products = [];
+        const categories = [
+            "Electronics", "Computers & Accessories", "Mobile & Tablets", "Smart Home & Automation", 
+            "Office Supplies & Furniture", "Audio & Wearables", "Gaming & Entertainment", 
+            "Networking & Security", "Kitchen Appliances", "Tools & Hardware"
+        ];
+
+        // Seed 100 products deterministically
+        function seedInitialProducts() {
+            const prefixes = {
+                "Electronics": ["OLED TV 55-inch", "4K Soundbar", "DSLR Camera", "Mirrorless Camera", "Bluetooth Speaker", "Digital Camcorder", "Home Theater Receiver", "Projector 1080p", "Action Camera 4K", "Car DashCam HD"],
+                "Computers & Accessories": ["Mechanical Keyboard", "Ergonomic Mouse", "4K Monitor 27-inch", "USB-C Multiport Dock", "External SSD 1TB", "Webcam 1080p Studio", "Laptop Stand Aluminum", "Gaming Mousepad RGB", "Stylus Pen Pro", "RAM DDR5 16GB"],
+                "Mobile & Tablets": ["Flagship Phone 256GB", "Foldable Smartphone", "Budget Smartphone 5G", "Tablet 11-inch 128GB", "E-Reader Paperwhite", "MagSafe Wireless Charger", "Fast Powerbank 20000mAh", "Phone Gimbal Stabilizer", "Rugged Tablet Case", "Screen Protector Glass"],
+                "Smart Home & Automation": ["Smart Speaker Voice", "RGB Smart Bulb E27", "Smart Video Doorbell", "Smart Thermostat", "Robot Vacuum Cleaner", "Smart Plug WiFi", "Smart Door Lock Bio", "Air Quality Monitor", "Smart Curtain Motor", "Water Leak Sensor"],
+                "Office Supplies & Furniture": ["Ergonomic Desk Chair", "Electric Standing Desk", "Paper Shredder Heavy Duty", "Label Printer Thermal", "Wireless Presenter Pen", "Document Scanner HD", "Laminating Machine", "Desk LED Task Lamp", "Under Desk Footrest", "Whiteboard Magnetic"],
+                "Audio & Wearables": ["ANC Headphone Wireless", "True Wireless Earbuds", "Fitness Smartwatch GPS", "Open-Ear Headphones", "Hi-Fi Studio Monitor", "Microphone USB Cardioid", "Smart Ring Health", "Audio Interface USB", "Hearing Amplifier", "Bone Conduction Phone"],
+                "Gaming & Entertainment": ["Console Edition 1TB", "Handheld Gaming PC", "VR Headset 256GB", "Wireless Game Controller", "Gaming Chair Racing", "Flight Simulator Joystick", "Arcade Fight Stick", "Capture Card 4K60", "Retro Gaming Handheld", "Gaming Steering Wheel"],
+                "Networking & Security": ["WiFi 6E Tri-Band Router", "Mesh WiFi System 3-Pack", "Unmanaged Switch 8-Port", "Security Camera Outdoor", "NAS Storage Enclosure", "PoE Injector Gigabit", "High Gain WiFi Antenna", "Network Cable Cat8 10m", "4G LTE Mobile Router", "VPN Hardware Firewall"],
+                "Kitchen Appliances": ["Smart Espresso Machine", "Air Fryer XL 5.5L", "Countertop Blender 1200W", "Electric Pressure Cooker", "Convection Microwave", "Sous Vide Precision Stick", "Electric Kettle Smart", "Toaster 4-Slice Stainless", "Juicer Cold Press", "Food Processor 10-in-1"],
+                "Tools & Hardware": ["Cordless Drill 20V Kit", "Digital Laser Distance Meter", "Rotary Tool Kit 160W", "Precision Screwdriver Set", "Soldering Station Digital", "Thermal Imaging Camera", "Multimeter Auto-Ranging", "Electric Pressure Washer", "Stud Finder Wall Scanner", "Li-ion Battery Pack 4Ah"]
+            };
+
+            const images = [
+                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60",
+                "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60",
+                "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&auto=format&fit=crop&q=60",
+                "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500&auto=format&fit=crop&q=60",
+                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&auto=format&fit=crop&q=60"
+            ];
+
+            let idCounter = 1;
+            categories.forEach(cat => {
+                const names = prefixes[cat];
+                for(let i=0; i<10; i++) {
+                    products.push({
+                        id: idCounter,
+                        sku: `${cat.substring(0,3).toUpperCase()}-${100 + i}`,
+                        name: names[i],
+                        category: cat,
+                        price: Math.floor(Math.random() * 45000) + 999, // Price in INR
+                        stock: Math.floor(Math.random() * 45) + 5,
+                        image: images[i % images.length]
+                    });
+                    idCounter++;
+                }
+            });
+        }
+
+        // INITIAL PROMO RULES
+        let promoRules = [
+            { code: "WELCOME10", discount: 10, type: "PERCENT", minSpend: 1000, desc: "10% OFF on orders over ₹1,000" },
+            { code: "FLAT500", discount: 500, type: "FLAT", minSpend: 5000, desc: "Flat ₹500 OFF on orders over ₹5,000" },
+            { code: "MEGA15", discount: 15, type: "PERCENT", minSpend: 15000, desc: "15% OFF Big Savings on orders over ₹15,000" }
+        ];
+
+        // REGISTERED USER ACCOUNTS (RBAC)
+        let users = [
+            {
+                username: "admin",
+                passwordKey: "admin124",
+                role: "ADMIN",
+                accessGranted: true,
+                blocked: false,
+                permissions: {
+                    canApplyCoupons: true,
+                    canViewAnalytics: true,
+                    canEditInventory: true,
+                    canProcessSales: true,
+                    canManagePromos: true
+                }
+            },
+            {
+                username: "cashier1",
+                passwordKey: "pass123",
+                role: "USER",
+                accessGranted: true,
+                blocked: false,
+                permissions: {
+                    canApplyCoupons: true,
+                    canViewAnalytics: false,
+                    canEditInventory: false,
+                    canProcessSales: true,
+                    canManagePromos: false
+                }
+            },
+            {
+                username: "pending_john",
+                passwordKey: "pass123",
+                role: "USER",
+                accessGranted: false, // Access not yet granted by Admin
+                blocked: false,
+                permissions: {
+                    canApplyCoupons: true,
+                    canViewAnalytics: false,
+                    canEditInventory: false,
+                    canProcessSales: true,
+                    canManagePromos: false
+                }
+            }
+        ];
+
+        // SESSION STATE
+        let currentUser = users[0]; // Default logged in as Admin
+        let cart = [];
+        let appliedCoupon = null;
+        let salesLog = [];
+
+        // Theme Toggle Function
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            seedInitialProducts();
+            updateHeaderProfile();
+            renderPosGrid();
+            renderInventoryTable();
+            renderPromoRules();
+            renderRbacUsers();
+            updateAnalyticsDashboard();
+            checkUserPermissionsAndUI();
+        };
+
+        // Navigation Tab Switching
+        function switchTab(tabName) {
+            // Check global access first
+            if(!currentUser.accessGranted || currentUser.blocked) {
+                document.getElementById('accessDeniedBanner').classList.remove('hidden');
+                return;
+            }
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab-btn').forEach(el => el.classList.remove('bg-indigo-50', 'dark:bg-indigo-950/50', 'text-indigo-600', 'font-bold'));
+
+            // Show target
+            const target = document.getElementById(`tab-${tabName}`);
+            if(target) target.classList.remove('hidden');
+
+            const btn = document.getElementById(`tab-btn-${tabName}`);
+            if(btn) btn.classList.add('bg-indigo-50', 'dark:bg-indigo-950/50', 'text-indigo-600', 'font-bold');
+        }
+
+        // Check Permissions & Restrict UI accordingly
+        function checkUserPermissionsAndUI() {
+            const isBlockedOrRevoked = !currentUser.accessGranted || currentUser.blocked;
+            const banner = document.getElementById('accessDeniedBanner');
+            
+            if (isBlockedOrRevoked) {
+                banner.classList.remove('hidden');
+                document.getElementById('deniedUsername').innerText = currentUser.username;
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            // Granular controls
+            const p = currentUser.permissions || {};
+            
+            // Add product button permission
+            const addBtn = document.getElementById('addNewProductBtn');
+            if(addBtn) addBtn.style.display = (currentUser.role === 'ADMIN' || p.canEditInventory) ? 'inline-flex' : 'none';
+
+            // Add promo rule button permission
+            const promoBtn = document.getElementById('addPromoBtn');
+            if(promoBtn) promoBtn.style.display = (currentUser.role === 'ADMIN' || p.canManagePromos) ? 'inline-flex' : 'none';
+
+            // Checkout button permission
+            const chkBtn = document.getElementById('checkoutBtn');
+            if(chkBtn) {
+                chkBtn.disabled = !p.canProcessSales;
+                chkBtn.style.opacity = p.canProcessSales ? '1' : '0.5';
+            }
+
+            // RBAC Tab visibility (Admin Only)
+            const rbacBtn = document.getElementById('tab-btn-rbac');
+            if(rbacBtn) rbacBtn.style.display = (currentUser.role === 'ADMIN') ? 'flex' : 'none';
+        }
+
+        // Render POS Grid
+        function renderPosGrid() {
+            const grid = document.getElementById('posGrid');
+            const search = document.getElementById('posSearch').value.toLowerCase();
+            const cat = document.getElementById('posCategoryFilter').value;
+
+            const filtered = products.filter(p => {
+                const matchCat = (cat === 'ALL') || (p.category === cat);
+                const matchSearch = p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                return matchCat && matchSearch;
+            });
+
+            grid.innerHTML = filtered.map(p => `
+                <div class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between hover:border-indigo-500 transition group">
+                    <div class="relative mb-2 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800 h-28">
+                        <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/300x200/1e293b/fff?text=Product'">
+                        <span class="absolute top-1 right-1 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">${p.sku}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-[10px] text-indigo-500 font-semibold block uppercase tracking-wider">${p.category}</span>
+                        <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100 line-clamp-1">${p.name}</h4>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="font-extrabold text-sm text-slate-900 dark:text-slate-100">₹${p.price.toLocaleString('en-IN')}</span>
+                            <span class="text-[10px] ${p.stock < 10 ? 'text-rose-500 font-bold' : 'text-slate-400'}">Stock: ${p.stock}</span>
+                        </div>
+                    </div>
+                    <button onclick="addToCart(${p.id})" ${p.stock <= 0 ? 'disabled' : ''} class="mt-2.5 w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg font-medium text-xs transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-cart-plus"></i> Add
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Cart Operations
+        function addToCart(productId) {
+            const item = products.find(p => p.id === productId);
+            if(!item || item.stock <= 0) return;
+
+            const existing = cart.find(c => c.id === productId);
+            if(existing) {
+                if(existing.qty < item.stock) existing.qty++;
+            } else {
+                cart.push({ ...item, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function updateCartQty(id, delta) {
+            const index = cart.findIndex(c => c.id === id);
+            if(index > -1) {
+                cart[index].qty += delta;
+                if(cart[index].qty <= 0) cart.splice(index, 1);
+            }
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            appliedCoupon = null;
+            document.getElementById('appliedCouponBadge').classList.add('hidden');
+            renderCart();
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartItemsList');
+            if(cart.length === 0) {
+                list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 py-8">
+                    <i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-50"></i>
+                    <p class="text-xs">Cart is empty</p>
+                </div>`;
+            } else {
+                list.innerHTML = cart.map(c => `
+                    <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-200/70 dark:border-slate-700/60 text-xs">
+                        <div class="flex-1 pr-2">
+                            <h5 class="font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">${c.name}</h5>
+                            <span class="text-slate-400 text-[10px]">₹${c.price.toLocaleString('en-IN')} x ${c.qty}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="updateCartQty(${c.id}, -1)" class="w-5 h-5 rounded bg-slate-200 dark:bg-slate-700 font-bold hover:bg-slate-300 flex items-center justify-center">-</button>
+                            <span class="font-bold text-xs w-4 text-center">${c.qty}</span>
+                            <button onclick="updateCartQty(${c.id}, 1)" class="w-5 h-5 rounded bg-slate-200 dark:bg-slate-700 font-bold hover:bg-slate-300 flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            recalculateCart();
+        }
+
+        function recalculateCart() {
+            const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            
+            // Tier Discount
+            const tierVal = document.getElementById('cartLoyaltyTier').value;
+            let tierPerc = 0;
+            if(tierVal === 'SILVER') tierPerc = 0.05;
+            if(tierVal === 'GOLD') tierPerc = 0.10;
+            if(tierVal === 'PLATINUM') tierPerc = 0.15;
+            
+            const loyaltyDiscount = subtotal * tierPerc;
+
+            // Promo Coupon
+            let promoDiscount = 0;
+            if(appliedCoupon) {
+                if(subtotal >= appliedCoupon.minSpend) {
+                    if(appliedCoupon.type === 'PERCENT') {
+                        promoDiscount = subtotal * (appliedCoupon.discount / 100);
+                    } else {
+                        promoDiscount = appliedCoupon.discount;
+                    }
+                } else {
+                    // Auto revoke coupon if subtotal drops below threshold
+                    appliedCoupon = null;
+                    document.getElementById('appliedCouponBadge').classList.add('hidden');
+                }
+            }
+
+            const taxable = Math.max(0, subtotal - loyaltyDiscount - promoDiscount);
+            const gstTax = taxable * 0.18; // 18% GST
+            const grandTotal = taxable + gstTax;
+
+            // Update UI Ledger
+            document.getElementById('ledgerSubtotal').innerText = `₹${subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ledgerLoyalty').innerText = `-₹${loyaltyDiscount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ledgerPromo').innerText = `-₹${promoDiscount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ledgerTax').innerText = `₹${gstTax.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ledgerGrandTotal').innerText = `₹${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+            // Smart Upsell Suggestion Logic
+            updateSmartUpsellBanner(subtotal);
+        }
+
+        function updateSmartUpsellBanner(subtotal) {
+            const bannerTitle = document.getElementById('upsellTitle');
+            const bannerDesc = document.getElementById('upsellDesc');
+
+            const upcomingPromos = promoRules
+                .filter(p => p.minSpend > subtotal)
+                .sort((a, b) => a.minSpend - b.minSpend);
+
+            if(upcomingPromos.length > 0) {
+                const next = upcomingPromos[0];
+                const diff = next.minSpend - subtotal;
+                bannerTitle.innerText = `Unlock Promo Code '${next.code}'!`;
+                bannerDesc.innerText = `Add ₹${diff.toLocaleString('en-IN')} more to unlock ${next.desc}`;
+            } else if (subtotal > 0) {
+                bannerTitle.innerText = `Maximum Savings Unlocked!`;
+                bannerDesc.innerText = `You qualify for top-tier discounts on this purchase.`;
+            } else {
+                bannerTitle.innerText = `Smart Promo Suggestion`;
+                bannerDesc.innerText = `Add products to your cart to see discount recommendations.`;
+            }
+        }
+
+        function applyCoupon() {
+            if(!currentUser.permissions.canApplyCoupons) {
+                alert("Permission Denied: Your account cannot apply discount codes.");
+                return;
+            }
+            const input = document.getElementById('couponInput').value.trim().toUpperCase();
+            const rule = promoRules.find(r => r.code === input);
+            const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+
+            if(!rule) {
+                alert("Invalid Promo Code!");
+                return;
+            }
+
+            if(subtotal < rule.minSpend) {
+                alert(`Cart Subtotal must be at least ₹${rule.minSpend} to use '${rule.code}'.`);
+                return;
+            }
+
+            appliedCoupon = rule;
+            document.getElementById('appliedCodeText').innerText = rule.code;
+            document.getElementById('appliedCouponBadge').classList.remove('hidden');
+            document.getElementById('couponInput').value = '';
+            recalculateCart();
+        }
+
+        function removeCoupon() {
+            appliedCoupon = null;
+            document.getElementById('appliedCouponBadge').classList.add('hidden');
+            recalculateCart();
+        }
+
+        function processCheckout() {
+            if(!currentUser.permissions.canProcessSales) {
+                alert("Access Denied: You do not have permission to process sales transactions.");
+                return;
+            }
+            if(cart.length === 0) {
+                alert("Cart is empty! Add items to checkout.");
+                return;
+            }
+
+            const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            
+            const tierVal = document.getElementById('cartLoyaltyTier').value;
+            let tierPerc = (tierVal === 'SILVER') ? 0.05 : (tierVal === 'GOLD') ? 0.10 : (tierVal === 'PLATINUM') ? 0.15 : 0;
+            const loyaltyDiscount = subtotal * tierPerc;
+
+            let promoDiscount = 0;
+            if(appliedCoupon && subtotal >= appliedCoupon.minSpend) {
+                promoDiscount = (appliedCoupon.type === 'PERCENT') ? subtotal * (appliedCoupon.discount / 100) : appliedCoupon.discount;
+            }
+
+            const totalDiscounts = loyaltyDiscount + promoDiscount;
+            const taxable = Math.max(0, subtotal - totalDiscounts);
+            const tax = taxable * 0.18;
+            const grandTotal = taxable + tax;
+
+            cart.forEach(item => {
+                const p = products.find(prod => prod.id === item.id);
+                if(p) p.stock = Math.max(0, p.stock - item.qty);
+            });
+
+            const orderRecord = {
+                orderId: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+                timestamp: new Date().toLocaleString(),
+                cashier: currentUser.username,
+                items: [...cart],
+                subtotal,
+                discounts: totalDiscounts,
+                tax,
+                grandTotal
+            };
+
+            salesLog.unshift(orderRecord);
+
+            document.getElementById('receiptTimestamp').innerText = orderRecord.timestamp;
+            document.getElementById('receiptOrderId').innerText = orderRecord.orderId;
+            document.getElementById('receiptCashier').innerText = orderRecord.cashier;
+            
+            document.getElementById('receiptItemList').innerHTML = cart.map(i => `
+                <div class="flex justify-between">
+                    <span>${i.name} (x${i.qty})</span>
+                    <span>₹${(i.price * i.qty).toLocaleString('en-IN')}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('receiptSubtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+            document.getElementById('receiptDiscounts').innerText = `-₹${totalDiscounts.toLocaleString('en-IN')}`;
+            document.getElementById('receiptTax').innerText = `₹${tax.toLocaleString('en-IN')}`;
+            document.getElementById('receiptTotal').innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+
+            document.getElementById('receiptModal').classList.remove('hidden');
+
+            clearCart();
+            renderPosGrid();
+            renderInventoryTable();
+            updateAnalyticsDashboard();
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            const search = document.getElementById('invSearch').value.toLowerCase();
+            const cat = document.getElementById('invCatFilter').value;
+
+            const filtered = products.filter(p => {
+                const matchCat = (cat === 'ALL') || (p.category === cat);
+                const matchSearch = p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                return matchCat && matchSearch;
+            });
+
+            document.getElementById('sbTotalProducts').innerText = products.length;
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                    <td class="p-3 font-semibold flex items-center gap-2">
+                        <img src="${p.image}" class="w-8 h-8 rounded object-cover" onerror="this.src='https://placehold.co/100x100/1e293b/fff?text=P'">
+                        <div>
+                            <div class="text-slate-800 dark:text-slate-200">${p.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${p.sku}</div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-slate-600 dark:text-slate-300">${p.category}</td>
+                    <td class="p-3 font-bold text-slate-800 dark:text-slate-100">₹${p.price.toLocaleString('en-IN')}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.stock < 10 ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400'}">
+                            ${p.stock} units
+                        </span>
+                    </td>
+                    <td class="p-3 text-right space-x-1">
+                        <button onclick="editProduct(${p.id})" class="p-1.5 text-slate-500 hover:text-indigo-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteProduct(${p.id})" class="p-1.5 text-slate-500 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddProductModal() {
+            if(!currentUser.permissions.canEditInventory && currentUser.role !== 'ADMIN') {
+                alert("Permission Denied: Inventory editing restricted.");
+                return;
+            }
+            document.getElementById('prodEditId').value = '';
+            document.getElementById('productModalTitle').innerText = "Add New Inventory Product";
+            document.getElementById('prodName').value = '';
+            document.getElementById('prodSKU').value = 'SKU-' + Math.floor(100 + Math.random() * 900);
+            document.getElementById('prodPrice').value = '';
+            document.getElementById('prodStock').value = '';
+            document.getElementById('prodImg').value = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60';
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function editProduct(id) {
+            if(!currentUser.permissions.canEditInventory && currentUser.role !== 'ADMIN') {
+                alert("Permission Denied: Inventory editing restricted.");
+                return;
+            }
+            const p = products.find(item => item.id === id);
+            if(!p) return;
+            document.getElementById('prodEditId').value = p.id;
+            document.getElementById('productModalTitle').innerText = "Edit Inventory Product";
+            document.getElementById('prodName').value = p.name;
+            document.getElementById('prodSKU').value = p.sku;
+            document.getElementById('prodCategory').value = p.category;
+            document.getElementById('prodPrice').value = p.price;
+            document.getElementById('prodStock').value = p.stock;
+            document.getElementById('prodImg').value = p.image;
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('prodEditId').value;
+            const name = document.getElementById('prodName').value;
+            const sku = document.getElementById('prodSKU').value;
+            const category = document.getElementById('prodCategory').value;
+            const price = parseFloat(document.getElementById('prodPrice').value);
+            const stock = parseInt(document.getElementById('prodStock').value);
+            const image = document.getElementById('prodImg').value;
+
+            if(editId) {
+                const p = products.find(item => item.id == editId);
+                if(p) {
+                    p.name = name; p.sku = sku; p.category = category; p.price = price; p.stock = stock; p.image = image;
+                }
+            } else {
+                const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({ id: newId, name, sku, category, price, stock, image });
+            }
+
+            closeProductModal();
+            renderInventoryTable();
+            renderPosGrid();
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        function deleteProduct(id) {
+            if(!currentUser.permissions.canEditInventory && currentUser.role !== 'ADMIN') {
+                alert("Permission Denied: Cannot delete products.");
+                return;
+            }
+            products = products.filter(p => p.id !== id);
+            renderInventoryTable();
+            renderPosGrid();
+        }
+
+        function renderPromoRules() {
+            const grid = document.getElementById('promoRulesGrid');
+            grid.innerHTML = promoRules.map((r, index) => `
+                <div class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/80 p-4 rounded-xl space-y-2 relative">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono font-extrabold text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">${r.code}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">${r.type === 'PERCENT' ? `${r.discount}% OFF` : `₹${r.discount} FLAT`}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 font-medium">${r.desc}</p>
+                    <div class="text-[10px] text-slate-400">Min Cart Requirement: <b>₹${r.minSpend.toLocaleString('en-IN')}</b></div>
+                    <button onclick="deletePromoRule(${index})" class="absolute bottom-2 right-2 text-xs text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function openPromoModal() {
+            if(!currentUser.permissions.canManagePromos && currentUser.role !== 'ADMIN') {
+                alert("Permission Denied: Only authorized managers can create promo rules.");
+                return;
+            }
+            const code = prompt("Enter New Promo Code (e.g., FESTIVE20):")?.toUpperCase();
+            if(!code) return;
+            const discount = parseFloat(prompt("Enter Discount Value (e.g. 20 for 20% or 200 for ₹200):") || "0");
+            const type = confirm("Click OK for Percentage (%), Cancel for Flat Amount (₹)") ? "PERCENT" : "FLAT";
+            const minSpend = parseFloat(prompt("Enter Minimum Cart Requirement in INR (e.g. 2000):") || "0");
+
+            promoRules.push({
+                code,
+                discount,
+                type,
+                minSpend,
+                desc: `${type === 'PERCENT' ? `${discount}% OFF` : `Flat ₹${discount} OFF`} on orders over ₹${minSpend}`
+            });
+
+            renderPromoRules();
+        }
+
+        function deletePromoRule(index) {
+            if(!currentUser.permissions.canManagePromos && currentUser.role !== 'ADMIN') {
+                alert("Permission Denied.");
+                return;
+            }
+            promoRules.splice(index, 1);
+            renderPromoRules();
+        }
+
+        function updateAnalyticsDashboard() {
+            const totalRev = salesLog.reduce((acc, s) => acc + s.grandTotal, 0);
+            const totalOrders = salesLog.length;
+            const totalDisc = salesLog.reduce((acc, s) => acc + s.discounts, 0);
+            const aov = totalOrders ? totalRev / totalOrders : 0;
+
+            document.getElementById('kpiRevenue').innerText = `₹${totalRev.toLocaleString('en-IN', {maximumFractionDigits:0})}`;
+            document.getElementById('kpiOrders').innerText = totalOrders;
+            document.getElementById('kpiDiscounts').innerText = `₹${totalDisc.toLocaleString('en-IN', {maximumFractionDigits:0})}`;
+            document.getElementById('kpiAOV').innerText = `₹${aov.toLocaleString('en-IN', {maximumFractionDigits:0})}`;
+
+            const tbody = document.getElementById('salesLogTableBody');
+            tbody.innerHTML = salesLog.map(s => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                    <td class="p-2.5 font-mono text-indigo-600 dark:text-indigo-400 font-bold">${s.orderId}</td>
+                    <td class="p-2.5 text-slate-500">${s.timestamp}</td>
+                    <td class="p-2.5 font-semibold text-slate-700 dark:text-slate-300">${s.cashier}</td>
+                    <td class="p-2.5 text-slate-500">${s.items.length} items</td>
+                    <td class="p-2.5 font-extrabold text-slate-800 dark:text-slate-100">₹${s.grandTotal.toLocaleString('en-IN')}</td>
+                    <td class="p-2.5 text-right"><button onclick="viewLogReceipt('${s.orderId}')" class="text-xs text-indigo-500 hover:underline">View</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function viewLogReceipt(orderId) {
+            const s = salesLog.find(log => log.orderId === orderId);
+            if(!s) return;
+
+            document.getElementById('receiptTimestamp').innerText = s.timestamp;
+            document.getElementById('receiptOrderId').innerText = s.orderId;
+            document.getElementById('receiptCashier').innerText = s.cashier;
+            
+            document.getElementById('receiptItemList').innerHTML = s.items.map(i => `
+                <div class="flex justify-between">
+                    <span>${i.name} (x${i.qty})</span>
+                    <span>₹${(i.price * i.qty).toLocaleString('en-IN')}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('receiptSubtotal').innerText = `₹${s.subtotal.toLocaleString('en-IN')}`;
+            document.getElementById('receiptDiscounts').innerText = `-₹${s.discounts.toLocaleString('en-IN')}`;
+            document.getElementById('receiptTax').innerText = `₹${s.tax.toLocaleString('en-IN')}`;
+            document.getElementById('receiptTotal').innerText = `₹${s.grandTotal.toLocaleString('en-IN')}`;
+
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function exportSalesCSV() {
+            if(salesLog.length === 0) {
+                alert("No sales data available to export!");
+                return;
+            }
+            let csv = "Order ID,Timestamp,Cashier,Subtotal,Discounts,Tax,Grand Total\n";
+            salesLog.forEach(s => {
+                csv += `"${s.orderId}","${s.timestamp}","${s.cashier}",${s.subtotal},${s.discounts},${s.tax},${s.grandTotal}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `sales_report_${Date.now()}.csv`);
+            a.click();
+        }
+
+        function renderRbacUsers() {
+            const container = document.getElementById('rbacUsersContainer');
+            
+            const pendingCount = users.filter(u => !u.accessGranted).length;
+            const badge = document.getElementById('pendingUserBadge');
+            if(pendingCount > 0) {
+                badge.innerText = pendingCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            container.innerHTML = users.map((u, idx) => `
+                <div class="bg-slate-50 dark:bg-slate-900/60 border ${!u.accessGranted ? 'border-amber-400/80 bg-amber-50/20' : u.blocked ? 'border-rose-400/80 bg-rose-50/20' : 'border-slate-200 dark:border-slate-700/80'} p-4 rounded-xl space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center uppercase">
+                                ${u.username.substring(0, 2)}
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    ${u.username}
+                                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${u.role}</span>
+                                </div>
+                                <div class="text-xs text-slate-500">Key: <code class="font-mono">${u.passwordKey}</code></div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            ${u.username !== 'admin' ? `
+                                <button onclick="toggleGlobalAccess(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${u.accessGranted ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200' : 'bg-amber-500 text-white hover:bg-amber-600'}">
+                                    ${u.accessGranted ? '<i class="fa-solid fa-circle-check"></i> Access Granted' : '<i class="fa-solid fa-circle-xmark"></i> Grant Site Access'}
+                                </button>
+
+                                <button onclick="toggleBlockUser(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${u.blocked ? 'bg-rose-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-600'}">
+                                    ${u.blocked ? '<i class="fa-solid fa-ban"></i> Blocked' : 'Block'}
+                                </button>
+                            ` : `<span class="text-xs text-indigo-500 font-bold"><i class="fa-solid fa-shield-halved"></i> Master Admin</span>`}
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 block mb-2">Granular Feature Permissions:</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
+                            <label class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                <input type="checkbox" ${u.permissions.canProcessSales ? 'checked' : ''} ${u.username === 'admin' ? 'disabled' : ''} onchange="togglePerm(${idx}, 'canProcessSales')" class="rounded text-indigo-600">
+                                <span class="text-[11px] font-medium">Process Sales</span>
+                            </label>
+
+                            <label class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                <input type="checkbox" ${u.permissions.canApplyCoupons ? 'checked' : ''} ${u.username === 'admin' ? 'disabled' : ''} onchange="togglePerm(${idx}, 'canApplyCoupons')" class="rounded text-indigo-600">
+                                <span class="text-[11px] font-medium">Apply Coupons</span>
+                            </label>
+
+                            <label class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                <input type="checkbox" ${u.permissions.canEditInventory ? 'checked' : ''} ${u.username === 'admin' ? 'disabled' : ''} onchange="togglePerm(${idx}, 'canEditInventory')" class="rounded text-indigo-600">
+                                <span class="text-[11px] font-medium">Edit Inventory</span>
+                            </label>
+
+                            <label class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                <input type="checkbox" ${u.permissions.canManagePromos ? 'checked' : ''} ${u.username === 'admin' ? 'disabled' : ''} onchange="togglePerm(${idx}, 'canManagePromos')" class="rounded text-indigo-600">
+                                <span class="text-[11px] font-medium">Manage Promos</span>
+                            </label>
+
+                            <label class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                <input type="checkbox" ${u.permissions.canViewAnalytics ? 'checked' : ''} ${u.username === 'admin' ? 'disabled' : ''} onchange="togglePerm(${idx}, 'canViewAnalytics')" class="rounded text-indigo-600">
+                                <span class="text-[11px] font-medium">View Analytics</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleGlobalAccess(userIndex) {
+            users[userIndex].accessGranted = !users[userIndex].accessGranted;
+            renderRbacUsers();
+            if(users[userIndex].username === currentUser.username) {
+                checkUserPermissionsAndUI();
+            }
+        }
+
+        function toggleBlockUser(userIndex) {
+            users[userIndex].blocked = !users[userIndex].blocked;
+            renderRbacUsers();
+            if(users[userIndex].username === currentUser.username) {
+                checkUserPermissionsAndUI();
+            }
+        }
+
+        function togglePerm(userIndex, permKey) {
+            users[userIndex].permissions[permKey] = !users[userIndex].permissions[permKey];
+            renderRbacUsers();
+            if(users[userIndex].username === currentUser.username) {
+                checkUserPermissionsAndUI();
+            }
+        }
+
+        function updateHeaderProfile() {
+            document.getElementById('headerUserAvatar').innerText = currentUser.username.substring(0,2).toUpperCase();
+            document.getElementById('headerUsername').childNodes[0].nodeValue = currentUser.username + ' ';
+            document.getElementById('headerRoleBadge').innerText = currentUser.role;
+
+            const accessBadge = document.getElementById('headerAccessBadge');
+            if(currentUser.accessGranted && !currentUser.blocked) {
+                accessBadge.className = "text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1";
+                accessBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Authorized Access`;
+            } else {
+                accessBadge.className = "text-[10px] text-rose-500 font-medium flex items-center gap-1";
+                accessBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Access Denied`;
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const uInput = document.getElementById('loginUsername').value.trim();
+            const pInput = document.getElementById('loginPassword').value.trim();
+
+            const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.passwordKey === pInput);
+            if(found) {
+                currentUser = found;
+                updateHeaderProfile();
+                closeLoginModal();
+                checkUserPermissionsAndUI();
+                switchTab('pos');
+            } else {
+                alert("Invalid Username or Security Key! (Hint: Admin Key is 'admin124')");
+            }
+        }
+
+        function openRegisterUserModal() {
+            document.getElementById('registerModal').classList.remove('hidden');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.add('hidden');
+        }
+
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const passwordKey = document.getElementById('regPassword').value.trim();
+            const role = document.getElementById('regRole').value;
+
+            if(users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                alert("Username already exists!");
+                return;
+            }
+
+            const newUser = {
+                username,
+                passwordKey,
+                role,
+                accessGranted: role === 'ADMIN',
+                blocked: false,
+                permissions: {
+                    canApplyCoupons: true,
+                    canViewAnalytics: role === 'ADMIN',
+                    canEditInventory: role === 'ADMIN',
+                    canProcessSales: true,
+                    canManagePromos: role === 'ADMIN'
+                }
+            };
+
+            users.push(newUser);
+            closeRegisterModal();
+            renderRbacUsers();
+            alert(`Account '${username}' created successfully! ${role === 'USER' ? 'Please log in as Admin to grant global site access.' : ''}`);
+        }
+
+        function requestAccessNotification() {
+            alert("Notification sent to Administrator. Please ask the Admin to enable access for your account in the User Permission Management panel.");
+        }
+    </script>
+</body>
+</html>
